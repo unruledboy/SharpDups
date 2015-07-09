@@ -19,13 +19,30 @@ namespace Xnlab.SharpDups.Runner
             {
                 var workers = 5;
 
-                //RunAll(workers, folder);
+                Console.WriteLine("Please choose from the following options(press the number):");
+                Console.WriteLine("1 Find");
+                Console.WriteLine("2 Compare");
+                Console.WriteLine("3 Performance Testing");
 
-                PerfAll(workers, folder);
+                var choice = Console.ReadKey();
+                Console.WriteLine();
+                switch (choice.Key)
+                {
+                    case ConsoleKey.D1:
+                        var v2 = new DupDetectorV2();
+                        Run(v2, workers, folder);
+                        break;
+                    case ConsoleKey.D2:
+                        RunAll(workers, folder);
+                        break;
+                    case ConsoleKey.D3:
+                        PerfAll(workers, folder);
+                        break;
+                }
             }
             else
                 Console.WriteLine("Please make sure folder {0} exist", folder);
-            Console.Read();
+            Console.ReadLine();
         }
 
         private static void PerfAll(int workers, string folder)
@@ -42,7 +59,7 @@ namespace Xnlab.SharpDups.Runner
         private static void Perf(IDupDetector dupDetector, int workers, string folder, int times)
         {
             var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
-            var timer = new Stopwatch();            
+            var timer = new Stopwatch();
             List<Duplicate> result = null;
 
             if (times <= 0)
