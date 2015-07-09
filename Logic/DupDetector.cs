@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Xnlab.SharpDups.Infrastructure;
 using Xnlab.SharpDups.Model;
 
 namespace Xnlab.SharpDups.Logic
 {
-    public class DupDetector
+    public class DupDetector : IDupDetector
     {
-        public List<Duplicate> Find(IEnumerable<string> files)
+        public List<Duplicate> Find(IEnumerable<string> files, int workers)
         {
             var result = new List<Duplicate>();
 

@@ -2,8 +2,7 @@
 fast duplicate file search with C#
 
 
-
-logic:
+Logic:
 
 1. Group files with same size
 
@@ -14,3 +13,10 @@ logic:
 4. Get full hash for files with same quick hash
 
 5. Group files with same full hash
+
+
+Methods:
+
+1. V1: uses sequential processing
+
+2. V2: uses parallel processing, 3 times faster with 5 worker threads

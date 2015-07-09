@@ -41,10 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Infrastructure\ExtensionMethods.cs" />
+    <Compile Include="Logic\IDupDetector.cs" />
+    <Compile Include="Logic\DupDetectorV2.cs" />
     <Compile Include="Model\Duplicate.cs" />
     <Compile Include="Model\DupItem.cs" />
     <Compile Include="Model\FileItem.cs" />
-    <Compile Include="Logic\HashTool.cs" />
+    <Compile Include="Infrastructure\HashTool.cs" />
     <Compile Include="Logic\DupDetector.cs" />
     <Compile Include="Runner\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

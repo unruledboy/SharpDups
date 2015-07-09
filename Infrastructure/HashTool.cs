@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Xnlab.SharpDups.Logic
+namespace Xnlab.SharpDups.Infrastructure
 {
     public class HashTool
     {
