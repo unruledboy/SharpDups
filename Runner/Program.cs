@@ -57,7 +57,7 @@ namespace Xnlab.SharpDups.Runner
 
             timer.Stop();
 
-            Log(string.Format("dup method: {0}, groups: {1}, times: {2}, avg elapsed: {3}", dupDetector, result.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
+            Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapsed: {4}", dupDetector, workers, result.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
         }
 
         private static void RunAll(int workers, string folder)
