@@ -4,6 +4,7 @@ fast duplicate file search with C#
 
 
 logic:
+
 1. Group files with same size
 
 2. Check first/middle/last bytes for quick hash
