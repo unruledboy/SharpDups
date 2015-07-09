@@ -30,7 +30,7 @@ namespace Xnlab.SharpDups.Runner
 
         private static void PerfAll(int workers, string folder)
         {
-            var times = 10;
+            var times = 2;
 
             var v2 = new DupDetectorV2();
             Perf(v2, workers, folder, times);
