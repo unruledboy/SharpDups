@@ -1,0 +1,7 @@
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDups\bin\Debug\Xnlab.SharpDups.exe
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDups\bin\Debug\Xnlab.SharpDups.pdb
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDups\obj\Debug\SharpDups.csprojResolveAssemblyReference.cache
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDups\obj\Debug\Xnlab.SharpDups.exe
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDups\obj\Debug\Xnlab.SharpDups.pdb
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDupsNewRepo\obj\Debug\Xnlab.SharpDups.exe
+C:\Users\huishengc\Documents\Visual Studio 2013\Projects\SharpDupsNewRepo\obj\Debug\Xnlab.SharpDups.pdb
