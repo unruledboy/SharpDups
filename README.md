@@ -1,7 +1,7 @@
 # SharpDups
 Fast duplicate file search via parallel processing with C#.
 
-The tool will find duplicate files using Map/Reduce method. It accepts a list of files and then performance the duplicate checking. It could be extended easily to support file search filter etc.
+The tool will find duplicate files using Map/Reduce method. It accepts a list of files and then perform the duplicate checking. It could be extended easily to support file search filter etc.
 
 
 Logic:
