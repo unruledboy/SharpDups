@@ -26,6 +26,7 @@ namespace Xnlab.SharpDups.Runner
 
                 var choice = Console.ReadKey();
                 Console.WriteLine();
+                Console.WriteLine("Started.");
                 switch (choice.Key)
                 {
                     case ConsoleKey.D1:
@@ -39,6 +40,7 @@ namespace Xnlab.SharpDups.Runner
                         PerfAll(workers, folder);
                         break;
                 }
+                Console.WriteLine("Done.");
             }
             else
                 Console.WriteLine("Please make sure folder {0} exist", folder);
