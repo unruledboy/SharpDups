@@ -1,5 +1,5 @@
 # SharpDups
-fast duplicate file search with C#
+fast duplicate file search via parallel processing with C#
 
 
 Logic:
