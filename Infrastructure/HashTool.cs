@@ -11,14 +11,30 @@ namespace Xnlab.SharpDups.Infrastructure
         {
             try
             {
-                byte[] hashBytes;
                 using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read))
                 {
-                    var md5 = new MD5CryptoServiceProvider();
-                    hashBytes = md5.ComputeHash(fs);
-                    fs.Close();
+                    using (var md5 = new MD5CryptoServiceProvider())
+                        return md5.ComputeHash(fs);
                 }
-                return hashBytes;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static byte[] HashFileBytes(string file, int start, int count)
+        {
+            try
+            {
+                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read))
+                {
+                    var bytes = new byte[count];
+                    fs.Seek(start, SeekOrigin.Begin);
+                    fs.Read(bytes, 0, count);
+                    using (var md5 = new MD5CryptoServiceProvider())
+                        return md5.ComputeHash(bytes);
+                }
             }
             catch (Exception)
             {
@@ -28,7 +44,7 @@ namespace Xnlab.SharpDups.Infrastructure
 
         public static string GetHashText(byte[] hashBytes)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(hashBytes.Length * 2);
             foreach (var t in hashBytes)
             {
                 sb.Append(t.ToString("x2"));
@@ -39,9 +55,13 @@ namespace Xnlab.SharpDups.Infrastructure
         public static string HashFile(string file)
         {
             var result = HashFileBytes(file);
-            if (result != null)
-                return GetHashText(result);
-            return null;
+            return result != null ? GetHashText(result) : null;
+        }
+
+        public static string HashFile(string file, int start, int count)
+        {
+            var result = HashFileBytes(file, start, count);
+            return result != null ? GetHashText(result) : null;
         }
     }
 }

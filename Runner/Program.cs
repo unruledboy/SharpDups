@@ -51,6 +51,9 @@ namespace Xnlab.SharpDups.Runner
         {
             var times = 2;
 
+            //var v3 = new DupDetectorV3();
+            //Perf(v3, workers, folder, times);
+
             var v2 = new DupDetectorV2();
             Perf(v2, workers, folder, times);
 
@@ -76,16 +79,19 @@ namespace Xnlab.SharpDups.Runner
 
             timer.Stop();
 
-            Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapsed: {4}", dupDetector, workers, result.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
+            Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapse: {4}", dupDetector, workers, result.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
         }
 
         private static void RunAll(int workers, string folder)
         {
-            var v1 = new DupDetector();
-            Run(v1, workers, folder);
+            //var v3 = new DupDetectorV3();
+            //Run(v3, workers, folder);
 
             var v2 = new DupDetectorV2();
             Run(v2, workers, folder);
+
+            var v1 = new DupDetector();
+            Run(v1, workers, folder);
         }
 
         private static void Run(IDupDetector dupDetector, int workers, string folder)
