@@ -13,7 +13,7 @@ namespace Xnlab.SharpDups.Logic
 	{
 		private int _workers;
 
-		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int bufferSize)
+		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int quickHashSize = 3, int bufferSize = 0)
 		{
 			_workers = workers;
 
