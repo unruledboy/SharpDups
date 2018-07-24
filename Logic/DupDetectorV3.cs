@@ -13,7 +13,7 @@ namespace Xnlab.SharpDups.Logic
 	{
 		private const int DefaultBufferSize = 64 * 1024;
 		private const int DefaulfQuickHashSize = 3 * 20;
-        private int _workers;
+		private int _workers;
 
 		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int quickHashSize, int bufferSize)
 		{
@@ -21,13 +21,13 @@ namespace Xnlab.SharpDups.Logic
 			if (_workers <= 0)
 				_workers = 5;
 
-            if (bufferSize <= 3)
-                bufferSize = DefaultBufferSize;
+			if (bufferSize <= 3)
+				bufferSize = DefaultBufferSize;
 
-            if (quickHashSize <= 0)
-                quickHashSize = DefaulfQuickHashSize;
+			if (quickHashSize <= 0)
+				quickHashSize = DefaulfQuickHashSize;
 
-            var result = new List<Duplicate>();
+			var result = new List<Duplicate>();
 			var failedToProcessFiles = new List<string>();
 
 			//groups with same file size
@@ -129,19 +129,19 @@ namespace Xnlab.SharpDups.Logic
 				using (var stream = File.Open(file.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
 				{
 					file.Tags = new byte[quickHashSize];
-                    for (var i = 0; i < 3; i++)
-                    {
-                        var sectionSize = quickHashSize / 3;
-                        long position;
-                        if (i == 0)
-                            position = 0;
-                        else if (i == 1)
-                            position = file.Size / 2 - sectionSize / 2;
-                        else
-                            position = file.Size - sectionSize;
-                        stream.Seek(position, SeekOrigin.Begin);
-                        stream.Read(file.Tags, i * sectionSize, sectionSize);
-                    }
+					for (var i = 0; i < 3; i++)
+					{
+						var sectionSize = quickHashSize / 3;
+						long position;
+						if (i == 0)
+							position = 0;
+						else if (i == 1)
+							position = file.Size / 2 - sectionSize / 2;
+						else
+							position = file.Size - sectionSize;
+						stream.Seek(position, SeekOrigin.Begin);
+						stream.Read(file.Tags, i * sectionSize, sectionSize);
+					}
 					file.QuickHash = HashTool.GetHashText(file.Tags);
 				}
 			}
