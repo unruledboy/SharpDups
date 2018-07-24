@@ -13,46 +13,51 @@ namespace Xnlab.SharpDups.Runner
 		static void Main(string[] args)
 		{
 			AppDomain.MonitoringIsEnabled = true;
-			Console.WriteLine("Please specify the folder to find dup files:");
-			var folder = Console.ReadLine();
-			if (Directory.Exists(folder))
+			var input = string.Empty;
+			while (!input.Equals("q", StringComparison.OrdinalIgnoreCase))
 			{
-				var workers = 5;
+				Console.WriteLine("Please specify the folder to find dup files:");
+				var folder = Console.ReadLine();
+				if (Directory.Exists(folder))
+				{
+					var workers = 5;
 
-				Console.WriteLine("Please choose from the following options(press the number):");
-				Console.WriteLine("1. Find");
-				Console.WriteLine("2. Compare");
-				Console.WriteLine("3. Performance Testing");
+					Console.WriteLine("Please choose from the following options(press the number):");
+					Console.WriteLine("1. Find");
+					Console.WriteLine("2. Compare");
+					Console.WriteLine("3. Performance Testing");
+					Console.WriteLine("Q. Quite");
 
-				var choice = Console.ReadKey();
+					var choice = Console.ReadKey();
+					Console.WriteLine();
+					Console.WriteLine("Started.");
+					switch (choice.Key)
+					{
+						case ConsoleKey.D1:
+							var detector = new ProgressiveDupDetector();
+							Run(detector, workers, folder);
+							break;
+						case ConsoleKey.D2:
+							RunAll(workers, folder);
+							break;
+						case ConsoleKey.D3:
+							PerfAll(workers, folder);
+							break;
+					}
+
+					Console.WriteLine($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms");
+					Console.WriteLine($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb");
+					Console.WriteLine($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb");
+
+					for (int index = 0; index <= GC.MaxGeneration; index++)
+					{
+						Console.WriteLine($"Gen {index} collections: {GC.CollectionCount(index)}");
+					}
+				}
+				else
+					Console.WriteLine("Please make sure folder {0} exist", folder);
 				Console.WriteLine();
-				Console.WriteLine("Started.");
-				switch (choice.Key)
-				{
-					case ConsoleKey.D1:
-						var detector = new ProgressiveDupDetector();
-						Run(detector, workers, folder);
-						break;
-					case ConsoleKey.D2:
-						RunAll(workers, folder);
-						break;
-					case ConsoleKey.D3:
-						PerfAll(workers, folder);
-						break;
-				}
-
-				Console.WriteLine($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms");
-				Console.WriteLine($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb");
-				Console.WriteLine($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb");
-
-				for (int index = 0; index <= GC.MaxGeneration; index++)
-				{
-					Console.WriteLine($"Gen {index} collections: {GC.CollectionCount(index)}");
-				}
 			}
-			else
-				Console.WriteLine("Please make sure folder {0} exist", folder);
-			Console.ReadLine();
 		}
 
 		private static void PerfAll(int workers, string folder)
@@ -95,9 +100,9 @@ namespace Xnlab.SharpDups.Runner
 		private static void Run(IDupDetector dupDetector, int workers, string folder)
 		{
 			var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
-			var result = dupDetector.Find(files, workers);
-			Log("dup groups:" + result.duplicates.Count);
-			foreach (var dup in result.duplicates)
+			var (duplicates, failedToProcessFiles) = dupDetector.Find(files, workers);
+			Log("dup groups:" + duplicates.Count);
+			foreach (var dup in duplicates)
 			{
 				var dupItems = dup.Items.OrderByDescending(f => f.ModifiedTime);
 				var latestItem = dupItems.First();
