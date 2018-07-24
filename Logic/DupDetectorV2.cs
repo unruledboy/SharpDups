@@ -11,6 +11,7 @@ namespace Xnlab.SharpDups.Logic
 {
 	public class DupDetectorV2 : IDupDetector
 	{
+		private const int DefaultBufferSize = 64 * 1024;
 		private int _workers;
 
 		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int quickHashSize = 3, int bufferSize = 0)
@@ -19,6 +20,9 @@ namespace Xnlab.SharpDups.Logic
 
 			if (_workers <= 0)
 				_workers = 5;
+
+			if (bufferSize <= 3)
+				bufferSize = DefaultBufferSize;
 
 			var result = new List<Duplicate>();
 			var failedToProcessFiles = new List<string>();
@@ -70,13 +74,14 @@ namespace Xnlab.SharpDups.Logic
 							}
 							catch (Exception)
 							{
+								file.IsFailed = true;
 								failedToProcessFiles.Add(file.FileName);
 							}
 						}
 					}
 
 					//groups with same quick hash value
-					var sameQuickHashGroups = group.GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
+					var sameQuickHashGroups = group.Where(f => !f.IsFailed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
 					foreach (var sameQuickHashGroup in sameQuickHashGroups)
 					{
 						mappedSameSizeGroupList.Add(sameQuickHashGroup);
