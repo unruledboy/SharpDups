@@ -51,12 +51,13 @@ namespace Xnlab.SharpDups.Logic
 						}
 						catch (Exception)
 						{
+							file.IsFailed = true;
 							failedToProcessFiles.Add(file.FileName);
 						}
 					}
 
 					//groups with same quick hash value
-					var sameQuickHashGroups = group.GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
+					var sameQuickHashGroups = group.Where(f => !f.IsFailed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
 					foreach (var sameQuickHashGroup in sameQuickHashGroups)
 					{
 						mappedSameSizeGroupList.Add(sameQuickHashGroup);
@@ -157,16 +158,23 @@ namespace Xnlab.SharpDups.Logic
 			var position = 0;
 			for (var i = 0; i < length; i++)
 			{
-				foreach (var group in groups.Where(g => !g.IsDifferent).GroupBy(g => i == 0 ? string.Empty : g.HashSections[i - 1]))
+				foreach (var group in groups.Where(g => !g.IsFailed && !g.IsDifferent).GroupBy(g => i == 0 ? string.Empty : g.HashSections[i - 1]))
 				{
 					var hashCount = 0;
 					foreach (var groupFile in group)
 					{
-						ProgressiveHashSection(position, groupFile, bufferSize);
+						try
+						{
+							ProgressiveHashSection(position, groupFile, bufferSize);
+						}
+						catch (Exception)
+						{
+							groupFile.IsFailed = true;
+						}
 						hashCount = groupFile.HashSections.Count;
 					}
 
-					foreach (var incrementalGroupWithSameHashSection in group.GroupBy(g => g.HashSections[hashCount - 1]))
+					foreach (var incrementalGroupWithSameHashSection in group.Where(g => !g.IsFailed).GroupBy(g => g.HashSections[hashCount - 1]))
 					{
 						if (incrementalGroupWithSameHashSection.Count() == 1)
 						{
