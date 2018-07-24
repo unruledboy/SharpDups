@@ -8,7 +8,7 @@ Logic:
 
 1. Group files with same size
 2. Check first/middle/last bytes for quick hash
-3. Group files with same quick hash
+3. Group files with same quick hash by comparing the bytes in the header/middle and end of the file
 4. Get progressive hash for files with same quick hash, if intermediate hash is different, discard the remaining comparison
 5. Group files with same full hash
 
