@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Xnlab.SharpDups.Model
 {
@@ -8,5 +8,6 @@ namespace Xnlab.SharpDups.Model
         public string QuickHash { get; set; }
         public string FullHash { get; set; }
         public List<string> HashSections  { get; set; }
+        public bool IsDifferent { get; set; }
     }
 }
