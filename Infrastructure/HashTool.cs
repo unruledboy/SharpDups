@@ -7,38 +7,24 @@ namespace Xnlab.SharpDups.Infrastructure
 {
     public class HashTool
     {
-        public static byte[] HashFileBytes(string file)
+        public static byte[] HashFileBytes(string file, int bufferSize)
         {
-            try
+            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize))
             {
-                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read))
-                {
-                    using (var md5 = new MD5CryptoServiceProvider())
-                        return md5.ComputeHash(fs);
-                }
-            }
-            catch (Exception)
-            {
-                return null;
+                using (var md5 = new MD5CryptoServiceProvider())
+                    return md5.ComputeHash(fs);
             }
         }
 
-        public static byte[] HashFileBytes(string file, int start, int count)
+        public static byte[] HashFileBytes(string file, int start, int count, int bufferSize)
         {
-            try
+            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize))
             {
-                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read))
-                {
-                    var bytes = new byte[count];
-                    fs.Seek(start, SeekOrigin.Begin);
-                    fs.Read(bytes, 0, count);
-                    using (var md5 = new MD5CryptoServiceProvider())
-                        return md5.ComputeHash(bytes);
-                }
-            }
-            catch (Exception)
-            {
-                return null;
+                var bytes = new byte[count];
+                fs.Seek(start, SeekOrigin.Begin);
+                fs.Read(bytes, 0, count);
+                using (var md5 = new MD5CryptoServiceProvider())
+                    return md5.ComputeHash(bytes);
             }
         }
 
@@ -52,15 +38,15 @@ namespace Xnlab.SharpDups.Infrastructure
             return sb.ToString();
         }
 
-        public static string HashFile(string file)
+        public static string HashFile(string file, int bufferSize)
         {
-            var result = HashFileBytes(file);
+            var result = HashFileBytes(file, bufferSize);
             return result != null ? GetHashText(result) : null;
         }
 
-        public static string HashFile(string file, int start, int count)
+        public static string HashFile(string file, int start, int count, int bufferSize)
         {
-            var result = HashFileBytes(file, start, count);
+            var result = HashFileBytes(file, start, count, bufferSize);
             return result != null ? GetHashText(result) : null;
         }
     }
