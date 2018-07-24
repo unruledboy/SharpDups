@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -12,17 +12,17 @@ namespace Xnlab.SharpDups.Runner
     {
         static void Main(string[] args)
         {
+			AppDomain.MonitoringIsEnabled = true;
             Console.WriteLine("Please specify the folder to find dup files:");
-            //specify any files here
             var folder = Console.ReadLine();
             if (Directory.Exists(folder))
             {
                 var workers = 5;
 
                 Console.WriteLine("Please choose from the following options(press the number):");
-                Console.WriteLine("1 Find");
-                Console.WriteLine("2 Compare");
-                Console.WriteLine("3 Performance Testing");
+                Console.WriteLine("1. Find");
+                Console.WriteLine("2. Compare");
+                Console.WriteLine("3. Performance Testing");
 
                 var choice = Console.ReadKey();
                 Console.WriteLine();
@@ -30,8 +30,8 @@ namespace Xnlab.SharpDups.Runner
                 switch (choice.Key)
                 {
                     case ConsoleKey.D1:
-                        var v2 = new DupDetectorV2();
-                        Run(v2, workers, folder);
+                        var detector = new ProgressiveDupDetector();
+                        Run(detector, workers, folder);
                         break;
                     case ConsoleKey.D2:
                         RunAll(workers, folder);
@@ -40,32 +40,34 @@ namespace Xnlab.SharpDups.Runner
                         PerfAll(workers, folder);
                         break;
                 }
-                Console.WriteLine("Done.");
-            }
-            else
+
+				Console.WriteLine($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms");
+				Console.WriteLine($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb");
+				Console.WriteLine($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb");
+
+				for (int index = 0; index <= GC.MaxGeneration; index++)
+				{
+					Console.WriteLine($"Gen {index} collections: {GC.CollectionCount(index)}");
+				}
+			}
+			else
                 Console.WriteLine("Please make sure folder {0} exist", folder);
             Console.ReadLine();
         }
 
         private static void PerfAll(int workers, string folder)
         {
-            var times = 2;
-
-            //var v3 = new DupDetectorV3();
-            //Perf(v3, workers, folder, times);
-
-            var v2 = new DupDetectorV2();
-            Perf(v2, workers, folder, times);
-
-            var v1 = new DupDetector();
-            Perf(v1, workers, folder, times);
+			foreach (var detector in new[] { (IDupDetector)new ProgressiveDupDetector(), new DupDetectorV2(), new DupDetector() })
+			{
+				Perf(detector, workers, folder, 2);
+			}
         }
 
         private static void Perf(IDupDetector dupDetector, int workers, string folder, int times)
         {
             var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
             var timer = new Stopwatch();
-            List<Duplicate> result = null;
+			(List<Duplicate> duplicates, IList<string> failedToProcessFiles) result = default;
 
             if (times <= 0)
                 times = 10;
@@ -79,27 +81,23 @@ namespace Xnlab.SharpDups.Runner
 
             timer.Stop();
 
-            Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapse: {4}", dupDetector, workers, result.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
+            Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapse: {4}", dupDetector, workers, result.duplicates.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
         }
 
         private static void RunAll(int workers, string folder)
         {
-            //var v3 = new DupDetectorV3();
-            //Run(v3, workers, folder);
-
-            var v2 = new DupDetectorV2();
-            Run(v2, workers, folder);
-
-            var v1 = new DupDetector();
-            Run(v1, workers, folder);
+			foreach (var detector in new[] { (IDupDetector)new ProgressiveDupDetector(), new DupDetectorV2(), new DupDetector() })
+			{
+				Run(detector, workers, folder);
+			}
         }
 
         private static void Run(IDupDetector dupDetector, int workers, string folder)
         {
             var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
             var result = dupDetector.Find(files, workers);
-            Log("dup groups:" + result.Count);
-            foreach (var dup in result)
+            Log("dup groups:" + result.duplicates.Count);
+            foreach (var dup in result.duplicates)
             {
                 var dupItems = dup.Items.OrderByDescending(f => f.ModifiedTime);
                 var latestItem = dupItems.First();
@@ -118,9 +116,7 @@ namespace Xnlab.SharpDups.Runner
         private static void Log(string text)
         {
             Console.WriteLine(text);
-            File.AppendAllText("log.txt", text);
-            File.AppendAllText("log.txt", "\r\n");
+            File.AppendAllText("log.txt", text + "\r\n");
         }
     }
-
 }
