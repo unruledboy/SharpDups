@@ -13,7 +13,7 @@ namespace Xnlab.SharpDups.Logic
 	{
 		private int _workers;
 
-		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers)
+		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int bufferSize)
 		{
 			_workers = workers;
 
@@ -90,7 +90,7 @@ namespace Xnlab.SharpDups.Logic
 				{
 					foreach (var groupFile in quickHashGroup)
 					{
-						groupFile.FullHash = HashTool.HashFile(groupFile.FileName);
+						groupFile.FullHash = HashTool.HashFile(groupFile.FileName, bufferSize);
 					}
 
 					//phew, finally.....

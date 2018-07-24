@@ -9,7 +9,7 @@ namespace Xnlab.SharpDups.Logic
 {
 	public class DupDetector : IDupDetector
 	{
-		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers)
+		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int bufferSize = 0)
 		{
 			var result = new List<Duplicate>();
 			var failedToProcessFiles = new List<string>();
@@ -68,7 +68,7 @@ namespace Xnlab.SharpDups.Logic
 				{
 					foreach (var groupFile in quickHashGroup)
 					{
-						groupFile.FullHash = HashTool.HashFile(groupFile.FileName);
+						groupFile.FullHash = HashTool.HashFile(groupFile.FileName, bufferSize);
 					}
 
 					//phew, finally.....
