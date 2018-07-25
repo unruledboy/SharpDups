@@ -14,7 +14,8 @@ namespace Xnlab.SharpDups.Runner
 		{
 			AppDomain.MonitoringIsEnabled = true;
 			var input = string.Empty;
-			while (!input.Equals("q", StringComparison.OrdinalIgnoreCase))
+			var exitCommand = "q";
+			while (!input.Equals(exitCommand, StringComparison.OrdinalIgnoreCase))
 			{
 				Console.WriteLine("Please specify the folder to find dup files:");
 				var folder = Console.ReadLine();
@@ -26,7 +27,7 @@ namespace Xnlab.SharpDups.Runner
 					Console.WriteLine("1. Find");
 					Console.WriteLine("2. Compare");
 					Console.WriteLine("3. Performance Testing");
-					Console.WriteLine("Q. Quite");
+					Console.WriteLine("Q. Quit");
 
 					var choice = Console.ReadKey();
 					Console.WriteLine();
@@ -42,6 +43,9 @@ namespace Xnlab.SharpDups.Runner
 							break;
 						case ConsoleKey.D3:
 							PerfAll(workers, folder);
+							break;
+						case ConsoleKey.Q:
+							input = exitCommand;
 							break;
 					}
 
