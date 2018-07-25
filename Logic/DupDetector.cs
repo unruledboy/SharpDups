@@ -62,14 +62,14 @@ namespace Xnlab.SharpDups.Logic
 						}
 						catch (Exception)
 						{
-							file.IsFailed = true;
+							file.Status = CompareStatus.Failed;
 							failedToProcessFiles.Add(file.FileName);
 						}
 					}
 				}
 
 				//groups with same quick hash value
-				var sameQuickHashGroups = group.Where(f => !f.IsFailed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
+				var sameQuickHashGroups = group.Where(f => f.Status != CompareStatus.Failed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
 				foreach (var quickHashGroup in sameQuickHashGroups)
 				{
 					foreach (var groupFile in quickHashGroup)

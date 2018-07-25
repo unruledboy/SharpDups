@@ -51,13 +51,13 @@ namespace Xnlab.SharpDups.Logic
 						}
 						catch (Exception)
 						{
-							file.IsFailed = true;
+							file.Status = CompareStatus.Failed;
 							failedToProcessFiles.Add(file.FileName);
 						}
 					}
 
 					//groups with same quick hash value
-					var sameQuickHashGroups = group.Where(f => !f.IsFailed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
+					var sameQuickHashGroups = group.Where(f => f.Status != CompareStatus.Failed).GroupBy(f => f.QuickHash).Where(g => g.Count() > 1);
 					foreach (var sameQuickHashGroup in sameQuickHashGroups)
 					{
 						mappedSameSizeGroupList.Add(sameQuickHashGroup);
@@ -65,15 +65,16 @@ namespace Xnlab.SharpDups.Logic
 				}
 			});
 
-			Parallel.ForEach(MapFileHashGroups(mappedSameSizeGroupList), mappedSameHashGroups =>
+			Parallel.ForEach(MapFileHashGroups(mappedSameSizeGroupList), mappedSameSizehGroups =>
 			{
-				foreach (var quickHashGroup in mappedSameHashGroups)
+				foreach (var quickHashGroup in mappedSameSizehGroups)
 				{
 					ProgressiveHash(quickHashGroup, bufferSize);
+					failedToProcessFiles.AddRange(quickHashGroup.Where(f => f.Status == CompareStatus.Failed).Select(f => f.FileName));
 
 					//phew, finally.....
 					//group by same file hash
-					var sameFullHashGroups = quickHashGroup.Where(g => !g.IsDifferent).GroupBy(g => g.FullHash).Where(g => g.Count() > 1);
+					var sameFullHashGroups = quickHashGroup.Where(g => g.Status != CompareStatus.Failed).GroupBy(g => g.FullHash).Where(g => g.Count() > 1);
 					result.AddRange(sameFullHashGroups.Select(fullHashGroup => new Duplicate { Items = fullHashGroup.Select(f => new FileItem { FileName = f.FileName, ModifiedTime = f.ModifiedTime, Size = f.Size }) }));
 				}
 			});
@@ -125,26 +126,26 @@ namespace Xnlab.SharpDups.Logic
 
 		private static void QuickHashFile(DupItem file, int quickHashSize)
 		{
-			if (file.Size >= quickHashSize)
+			var hashSize = (int)Math.Min(file.Size, quickHashSize);
+			using (var stream = File.Open(file.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
-				using (var stream = File.Open(file.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+				file.Tags = new byte[hashSize];
+				for (var i = 0; i < 3; i++)
 				{
-					file.Tags = new byte[quickHashSize];
-					for (var i = 0; i < 3; i++)
-					{
-						var sectionSize = quickHashSize / 3;
-						long position;
-						if (i == 0)
-							position = 0;
-						else if (i == 1)
-							position = file.Size / 2 - sectionSize / 2;
-						else
-							position = file.Size - sectionSize;
-						stream.Seek(position, SeekOrigin.Begin);
-						stream.Read(file.Tags, i * sectionSize, sectionSize);
-					}
-					file.QuickHash = HashTool.GetHashText(file.Tags);
+					var sectionSize = hashSize / 3;
+					long position;
+					if (i == 0)
+						position = 0;
+					else if (i == 1)
+						position = file.Size / 2 - sectionSize / 2;
+					else
+						position = file.Size - sectionSize;
+					stream.Seek(position, SeekOrigin.Begin);
+					stream.Read(file.Tags, i * sectionSize, sectionSize);
 				}
+				file.QuickHash = HashTool.HashBytesText(file.Tags);
+				if (file.Size <= hashSize)
+					file.Status = CompareStatus.Matched;
 			}
 		}
 
@@ -155,10 +156,10 @@ namespace Xnlab.SharpDups.Logic
 			var length = first.Size / bufferSize;
 			if (length == 0)
 				length = 1;
-			var position = 0;
+			var position = 0L;
 			for (var i = 0; i < length; i++)
 			{
-				foreach (var group in groups.Where(g => !g.IsFailed && !g.IsDifferent).GroupBy(g => i == 0 ? string.Empty : g.HashSections[i - 1]))
+				foreach (var group in groups.Where(g => g.Status == CompareStatus.None).GroupBy(g => i == 0 ? string.Empty : g.HashSections[i - 1]))
 				{
 					var hashCount = 0;
 					foreach (var groupFile in group)
@@ -169,18 +170,18 @@ namespace Xnlab.SharpDups.Logic
 						}
 						catch (Exception)
 						{
-							groupFile.IsFailed = true;
+							groupFile.Status = CompareStatus.Failed;
 						}
 						hashCount = groupFile.HashSections.Count;
 					}
 
-					foreach (var incrementalGroupWithSameHashSection in group.Where(g => !g.IsFailed).GroupBy(g => g.HashSections[hashCount - 1]))
+					foreach (var incrementalGroupWithSameHashSection in group.Where(g => g.Status != CompareStatus.Failed).GroupBy(g => g.HashSections[hashCount - 1]))
 					{
 						if (incrementalGroupWithSameHashSection.Count() == 1)
 						{
 							foreach (var item in incrementalGroupWithSameHashSection)
 							{
-								item.IsDifferent = true;
+								item.Status = CompareStatus.Different;
 							}
 						}
 					}
@@ -188,13 +189,14 @@ namespace Xnlab.SharpDups.Logic
 				position += bufferSize;
 			}
 
-			foreach (var groupFile in groups.Where(g => !g.IsDifferent))
+			foreach (var groupFile in groups.Where(g => g.Status != CompareStatus.Different))
 			{
-				groupFile.FullHash = string.Join(string.Empty, groupFile.HashSections);
+				if (groupFile.Status != CompareStatus.Matched)
+					groupFile.FullHash = string.Join(string.Empty, groupFile.HashSections);
 			}
 		}
 
-		private static void ProgressiveHashSection(int position, DupItem dupItem, int bufferSize)
+		private static void ProgressiveHashSection(long position, DupItem dupItem, int bufferSize)
 		{
 			if (dupItem.HashSections == null)
 				dupItem.HashSections = new List<string>();
