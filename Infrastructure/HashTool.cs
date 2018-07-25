@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,7 +15,7 @@ namespace Xnlab.SharpDups.Infrastructure
 			}
 		}
 
-		public static byte[] HashFileBytes(string file, int start, int count, int bufferSize)
+		public static byte[] HashFileBytes(string file, long start, int count, int bufferSize)
 		{
 			using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize))
 			{
@@ -25,6 +25,12 @@ namespace Xnlab.SharpDups.Infrastructure
 				using (var md5 = new MD5CryptoServiceProvider())
 					return md5.ComputeHash(bytes);
 			}
+		}
+
+		public static byte[] HashBytes(byte[] contentBytes)
+		{
+			using (var md5 = new MD5CryptoServiceProvider())
+				return md5.ComputeHash(contentBytes);
 		}
 
 		public static string GetHashText(byte[] hashBytes)
@@ -40,13 +46,19 @@ namespace Xnlab.SharpDups.Infrastructure
 		public static string HashFile(string file, int bufferSize)
 		{
 			var result = HashFileBytes(file, bufferSize);
-			return result != null ? GetHashText(result) : null;
+			return GetHashText(result);
 		}
 
-		public static string HashFile(string file, int start, int count, int bufferSize)
+		public static string HashBytesText(byte[] contentBytes)
+		{
+			var result = HashBytes(contentBytes);
+			return GetHashText(result);
+		}
+
+		public static string HashFile(string file, long start, int count, int bufferSize)
 		{
 			var result = HashFileBytes(file, start, count, bufferSize);
-			return result != null ? GetHashText(result) : null;
+			return GetHashText(result);
 		}
 	}
 }
