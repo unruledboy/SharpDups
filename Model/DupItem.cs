@@ -8,7 +8,14 @@ namespace Xnlab.SharpDups.Model
 		public string QuickHash { get; set; }
 		public string FullHash { get; set; }
 		public List<string> HashSections { get; set; }
-		public bool IsDifferent { get; set; }
-		public bool IsFailed { get; set; }
+		public CompareStatus Status { get; set; }
+	}
+
+	public enum CompareStatus
+	{
+		None = 0,
+		Matched = 1,
+		Different = 2,
+		Failed = 3
 	}
 }
