@@ -31,6 +31,9 @@ namespace Xnlab.SharpDups.Runner
 					var choice = Console.ReadKey();
 					Console.WriteLine();
 					Console.WriteLine("Started.");
+
+					var startTime = AppDomain.CurrentDomain.MonitoringTotalProcessorTime;
+					var allocated = AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize;
 					switch (choice.Key)
 					{
 						case ConsoleKey.D1:
@@ -48,14 +51,15 @@ namespace Xnlab.SharpDups.Runner
 							break;
 					}
 
-					Log($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms", true);
-					Log($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb", true);
+					Log($"Took: {(AppDomain.CurrentDomain.MonitoringTotalProcessorTime - startTime).TotalMilliseconds:#,###} ms", true);
+					Log($"Allocated: {(AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize - allocated) / 1024:#,#} kb", true);
 					Log($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb", true);
 
 					for (var index = 0; index <= GC.MaxGeneration; index++)
 					{
-						Console.WriteLine($"Gen {index} collections: {GC.CollectionCount(index)}");
+						Log($"Gen {index} collections: {GC.CollectionCount(index)}", true);
 					}
+					Log(string.Empty, true);
 				}
 				else
 					Console.WriteLine("Please make sure folder {0} exist", folder);
