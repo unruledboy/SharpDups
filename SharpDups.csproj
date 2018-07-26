@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -52,6 +52,7 @@
     <Compile Include="Logic\DupDetectorV2.cs" />
     <Compile Include="Model\Duplicate.cs" />
     <Compile Include="Model\DupItem.cs" />
+    <Compile Include="Model\DupResult.cs" />
     <Compile Include="Model\FileItem.cs" />
     <Compile Include="Infrastructure\HashTool.cs" />
     <Compile Include="Logic\DupDetector.cs" />
