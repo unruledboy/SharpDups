@@ -26,6 +26,7 @@ The tool will find duplicate files using Map/Reduce method. It accepts a list of
 --------------------------
 
 **现有方案**
+
 我们判断文件是否重复，一般是给两个需要比较的文件进行哈希，然后比较哈希值。
 
 这个做法有个问题，就是比较慢：
@@ -33,6 +34,7 @@ The tool will find duplicate files using Map/Reduce method. It accepts a list of
  - 如果文件的一部分不一样，那还需要比较吗？
 
 **新的方案**
+
 步骤如下：
  - 把文件列表按文件大小分组，大小不一的文件会被认为不一样，尽管有可能差异只是空格或者空行（回车换行）
  - 快速比较文件头、尾、中间的三个部分可定义的一定数量的内容，如果不一样，则会视为不是一样的文件
