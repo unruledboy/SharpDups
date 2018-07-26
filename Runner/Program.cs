@@ -48,9 +48,9 @@ namespace Xnlab.SharpDups.Runner
 							break;
 					}
 
-					Console.WriteLine($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms");
-					Console.WriteLine($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb");
-					Console.WriteLine($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb");
+					Log($"Took: {AppDomain.CurrentDomain.MonitoringTotalProcessorTime.TotalMilliseconds:#,###} ms", true);
+					Log($"Allocated: {AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize / 1024:#,#} kb", true);
+					Log($"Peak Working Set: {Process.GetCurrentProcess().PeakWorkingSet64 / 1024:#,#} kb", true);
 
 					for (var index = 0; index <= GC.MaxGeneration; index++)
 					{
@@ -89,7 +89,7 @@ namespace Xnlab.SharpDups.Runner
 
 			timer.Stop();
 
-			Log(string.Format("dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapse: {4}", dupDetector, workers, result.Duplicates.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)));
+			Log(string.Format("Dup method: {0}, workers: {1}, groups: {2}, times: {3}, avg elapse: {4}", dupDetector, workers, result.Duplicates.Count, times, TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds / times)), true);
 		}
 
 		private static void RunAll(int workers, string folder)
@@ -104,18 +104,14 @@ namespace Xnlab.SharpDups.Runner
 		{
 			var files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
 			var result = dupDetector.Find(files, workers);
-			Log($"total files: {result.TotalFiles}");
-			Log($"total file bytes: {result.TotalFileBytes}");
-			Log($"total read bytes: {result.TotalReadBytes}");
-			Log($"dup groups: {result.Duplicates.Count}");
-			foreach (var dup in result.Duplicates)
+			foreach (var dup in result.Duplicates.Where(x => x != null))
 			{
 				var dupItems = dup.Items.OrderByDescending(f => f.ModifiedTime);
 				var latestItem = dupItems.First();
-				Log("\tlatest one:");
+				Log("\tLatest one:");
 				Log(string.Format("\t\t{0}", latestItem.FileName));
 				var remainingItems = dupItems.Skip(1).ToArray();
-				Log(string.Format("\tdup items:{0}", remainingItems.Length));
+				Log(string.Format("\tDup items:{0}", remainingItems.Length));
 				foreach (var item in remainingItems)
 				{
 					Log(string.Format("\t\t{0}", item.FileName));
@@ -124,14 +120,20 @@ namespace Xnlab.SharpDups.Runner
 			}
 
 			Log(string.Empty);
-			Log($"Failed to process: {result.FailedToProcessFiles.Count}");
+			Log($"Failed to process: {result.FailedToProcessFiles.Count}", true);
 			foreach (var item in result.FailedToProcessFiles)
 			{
 				Log($"\t{item}");
 			}
+
+			Log($"Dup groups: {result.Duplicates.Count}", true);
+			Log($"Total files: {result.TotalFiles}", true);
+			Log($"Total compared files: {result.TotalComparedFiles}", true);
+			Log($"Total file bytes: {result.TotalBytesInComparedFiles}", true);
+			Log($"Total read bytes: {result.TotalReadBytes}", true);
 		}
 
-		private static void Log(string text)
+		private static void Log(string text, bool logToFile = false)
 		{
 			Console.WriteLine(text);
 			File.AppendAllText("log.txt", text + "\r\n");
