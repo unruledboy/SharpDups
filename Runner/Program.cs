@@ -20,7 +20,7 @@ namespace Xnlab.SharpDups.Runner
 				var folder = Console.ReadLine();
 				if (Directory.Exists(folder))
 				{
-					var workers = 5;
+					var workers = 10;
 
 					Console.WriteLine("Please choose from the following options(press the number):");
 					Console.WriteLine("1. Find");
@@ -131,12 +131,14 @@ namespace Xnlab.SharpDups.Runner
 			Log($"Total compared files: {result.TotalComparedFiles}", true);
 			Log($"Total file bytes: {result.TotalBytesInComparedFiles}", true);
 			Log($"Total read bytes: {result.TotalReadBytes}", true);
+			Log(string.Empty);
 		}
 
 		private static void Log(string text, bool logToFile = false)
 		{
 			Console.WriteLine(text);
-			File.AppendAllText("log.txt", text + "\r\n");
+			if (logToFile)
+				File.AppendAllText("log.txt", text + "\r\n");
 		}
 	}
 }
