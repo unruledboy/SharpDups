@@ -18,8 +18,8 @@ namespace Xnlab.SharpDups.Logic
 
 		public DupResult Find(IEnumerable<string> files, int workers, int quickHashSize, int bufferSize)
 		{
-			var result = new DupResult { Duplicates = new List<Duplicate>(), FailedToProcessFiles = new List<string>() };
-			var totalFiles = 0L;
+			var result = new DupResult { Duplicates = new List<Duplicate>(), FailedToProcessFiles = new List<string>(), TotalFiles = files.LongCount() };
+			var totalComparedFiles = 0L;
 			var totalFileBytes = 0L;
 			var totalReadBytes = 0L;
 
@@ -47,7 +47,7 @@ namespace Xnlab.SharpDups.Logic
 				{
 					foreach (var file in group)
 					{
-						Interlocked.Increment(ref totalFiles);
+						Interlocked.Increment(ref totalComparedFiles);
 						try
 						{
 							//fast random bytes checking
@@ -83,8 +83,8 @@ namespace Xnlab.SharpDups.Logic
 				}
 			});
 
-			result.TotalFiles = totalFiles;
-			result.TotalFileBytes = totalFileBytes;
+			result.TotalComparedFiles = totalComparedFiles;
+			result.TotalBytesInComparedFiles = totalFileBytes;
 			result.TotalReadBytes = totalReadBytes;
 			return result;
 		}
