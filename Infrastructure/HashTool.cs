@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,10 +16,12 @@ namespace Xnlab.SharpDups.Infrastructure
 			}
 		}
 
-		public static byte[] HashFileBytes(string file, long start, int count, int bufferSize)
+		public static byte[] HashFileBytes(string file, long start, int count, int bufferSize, out int readSize)
 		{
 			using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize))
 			{
+				count = (int)Math.Min(fs.Length, count);
+				readSize = count;
 				var bytes = new byte[count];
 				fs.Seek(start, SeekOrigin.Begin);
 				fs.Read(bytes, 0, count);
@@ -55,9 +58,9 @@ namespace Xnlab.SharpDups.Infrastructure
 			return GetHashText(result);
 		}
 
-		public static string HashFile(string file, long start, int count, int bufferSize)
+		public static string HashFile(string file, long start, int count, int bufferSize, out int readSize)
 		{
-			var result = HashFileBytes(file, start, count, bufferSize);
+			var result = HashFileBytes(file, start, count, bufferSize, out readSize);
 			return GetHashText(result);
 		}
 	}
