@@ -15,10 +15,13 @@ Logic:
 
 Methods:
 
-1. V1: uses sequential processing
-2. V2: uses parallel processing, 3 times faster with 5 worker threads
-3. V3: use parallel processing and progressive hashing
+ - V1: uses sequential processing
+ - V2: uses parallel processing, 3 times faster with 5 worker threads
+ - V3: use parallel processing and progressive hashing
 
+Features:
+ - Fast, with parallel processing via MapReduce
+ - Really fast, drastically reduce I/O read, typically only read 5-10% of all content
 
 --------------------------
 
@@ -37,5 +40,6 @@ Methods:
  - 事实上，BT等下载引擎也是用了类似的办法。
 
 方案特色
- - 支持并行计算，使用MapReduce方式，分而治之，加快比较速度
+ - 很快！支持并行计算，使用MapReduce方式，分而治之，加快比较速度
+ - 闪电般快！大大减少IO读取，一般只会读取量只有实际数据的5%-10%
  - 支持保留比较结果，以备以后和别的文件比较，而且这个比较逻辑和批量比较是一致的
