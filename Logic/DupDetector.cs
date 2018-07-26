@@ -11,10 +11,9 @@ namespace Xnlab.SharpDups.Logic
 	{
 		private const int DefaultBufferSize = 64 * 1024;
 
-		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int quickHashSize = 3, int bufferSize = 0)
+		public DupResult Find(IEnumerable<string> files, int workers, int quickHashSize = 3, int bufferSize = 0)
 		{
-			var result = new List<Duplicate>();
-			var failedToProcessFiles = new List<string>();
+			var result = new DupResult { Duplicates = new List<Duplicate>(), FailedToProcessFiles = new List<string>() };
 
 			if (bufferSize <= 3)
 				bufferSize = DefaultBufferSize;
@@ -63,7 +62,7 @@ namespace Xnlab.SharpDups.Logic
 						catch (Exception)
 						{
 							file.Status = CompareStatus.Failed;
-							failedToProcessFiles.Add(file.FileName);
+							result.FailedToProcessFiles.Add(file.FileName);
 						}
 					}
 				}
@@ -74,17 +73,24 @@ namespace Xnlab.SharpDups.Logic
 				{
 					foreach (var groupFile in quickHashGroup)
 					{
-						groupFile.FullHash = HashTool.HashFile(groupFile.FileName, bufferSize);
+						try
+						{
+							groupFile.FullHash = HashTool.HashFile(groupFile.FileName, bufferSize);
+						}
+						catch (Exception)
+						{
+							result.FailedToProcessFiles.Add(groupFile.FileName);
+						}
 					}
 
 					//phew, finally.....
 					//group by same file hash
 					var sameFullHashGroups = quickHashGroup.GroupBy(g => g.FullHash).Where(g => g.Count() > 1);
-					result.AddRange(sameFullHashGroups.Select(fullHashGroup => new Duplicate { Items = fullHashGroup.Select(f => new FileItem { FileName = f.FileName, ModifiedTime = f.ModifiedTime, Size = f.Size }) }));
+					result.Duplicates.AddRange(sameFullHashGroups.Select(fullHashGroup => new Duplicate { Items = fullHashGroup.Select(f => new FileItem { FileName = f.FileName, ModifiedTime = f.ModifiedTime, Size = f.Size }) }));
 				}
 			}
 
-			return (result, failedToProcessFiles);
+			return result;
 		}
 	}
 }

@@ -3,26 +3,20 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Xnlab.SharpDups.Infrastructure;
 using Xnlab.SharpDups.Model;
 
 namespace Xnlab.SharpDups.Logic
 {
-	public class ProgressiveDupDetector : IDupDetector
+	public class ProgressiveDupDetectorWithGpu : IDupDetector
 	{
 		private const int DefaultBufferSize = 64 * 1024;
 		private const int DefaulfQuickHashSize = 3 * 20;
 		private int _workers;
 
-		public DupResult Find(IEnumerable<string> files, int workers, int quickHashSize, int bufferSize)
+		public (List<Duplicate> duplicates, IList<string> failedToProcessFiles) Find(IEnumerable<string> files, int workers, int quickHashSize, int bufferSize)
 		{
-			var result = new DupResult { Duplicates = new List<Duplicate>(), FailedToProcessFiles = new List<string>() };
-			var totalFiles = 0L;
-			var totalFileBytes = 0L;
-			var totalReadBytes = 0L;
-
 			_workers = workers;
 			if (_workers <= 0)
 				_workers = 5;
@@ -33,6 +27,9 @@ namespace Xnlab.SharpDups.Logic
 			if (quickHashSize <= 0)
 				quickHashSize = DefaulfQuickHashSize;
 
+			var result = new List<Duplicate>();
+			var failedToProcessFiles = new List<string>();
+
 			//groups with same file size
 			var sameSizeGroups = files.Select(f =>
 			{
@@ -41,22 +38,21 @@ namespace Xnlab.SharpDups.Logic
 
 			var mappedSameSizeGroupList = new ConcurrentBag<IGrouping<string, DupItem>>();
 
-			Parallel.ForEach(MapFileSizeGroups(sameSizeGroups), mappedSameSizeGroups =>
+			gpu.ForEach(MapFileSizeGroups(sameSizeGroups), mappedSameSizeGroups =>
 			{
 				foreach (var group in mappedSameSizeGroups)
 				{
 					foreach (var file in group)
 					{
-						Interlocked.Increment(ref totalFiles);
 						try
 						{
 							//fast random bytes checking
-							QuickHashFile(file, quickHashSize, ref totalFileBytes, ref totalReadBytes);
+							QuickHashFile(file, quickHashSize);
 						}
 						catch (Exception)
 						{
 							file.Status = CompareStatus.Failed;
-							result.FailedToProcessFiles.Add(file.FileName);
+							failedToProcessFiles.Add(file.FileName);
 						}
 					}
 
@@ -73,20 +69,17 @@ namespace Xnlab.SharpDups.Logic
 			{
 				foreach (var quickHashGroup in mappedSameSizehGroups)
 				{
-					ProgressiveHash(quickHashGroup, bufferSize, ref totalReadBytes);
-					result.FailedToProcessFiles.AddRange(quickHashGroup.Where(f => f.Status == CompareStatus.Failed).Select(f => f.FileName));
+					ProgressiveHash(quickHashGroup, bufferSize);
+					failedToProcessFiles.AddRange(quickHashGroup.Where(f => f.Status == CompareStatus.Failed).Select(f => f.FileName));
 
 					//phew, finally.....
 					//group by same file hash
 					var sameFullHashGroups = quickHashGroup.Where(g => g.Status != CompareStatus.Failed).GroupBy(g => g.FullHash).Where(g => g.Count() > 1);
-					result.Duplicates.AddRange(sameFullHashGroups.Select(fullHashGroup => new Duplicate { Items = fullHashGroup.Select(f => new FileItem { FileName = f.FileName, ModifiedTime = f.ModifiedTime, Size = f.Size }) }));
+					result.AddRange(sameFullHashGroups.Select(fullHashGroup => new Duplicate { Items = fullHashGroup.Select(f => new FileItem { FileName = f.FileName, ModifiedTime = f.ModifiedTime, Size = f.Size }) }));
 				}
 			});
 
-			result.TotalFiles = totalFiles;
-			result.TotalFileBytes = totalFileBytes;
-			result.TotalReadBytes = totalReadBytes;
-			return result;
+			return (result, failedToProcessFiles);
 		}
 
 		private static DupItem GetDupFileItem(string f)
@@ -98,18 +91,14 @@ namespace Xnlab.SharpDups.Logic
 		public static DupItem ProgressiveHashFile(string file, int quickHashSize, int bufferSize)
 		{
 			var dupFileItem = GetDupFileItem(file);
-			var totalFileBytes = 0L;
-			var totalReadBytes = 0L;
-
-			QuickHashFile(dupFileItem, quickHashSize, ref totalFileBytes, ref totalReadBytes);
-
+			QuickHashFile(dupFileItem, quickHashSize);
 			var length = dupFileItem.Size / bufferSize;
 			if (length == 0)
 				length = 1;
 			var position = 0L;
 			for (var i = 0; i < length; i++)
 			{
-				ProgressiveHashSection(position, dupFileItem, bufferSize, ref totalReadBytes);
+				ProgressiveHashSection(position, dupFileItem, bufferSize);
 				position += bufferSize;
 			}
 			return dupFileItem;
@@ -117,13 +106,11 @@ namespace Xnlab.SharpDups.Logic
 
 		public static bool ProgressiveCompareFile(DupItem sourceDupItem, string targetFile, int quickHashSize, int bufferSize)
 		{
-			var totalFileBytes = 0L;
-			var totalReadBytes = 0L;
 			var targetDupFileItem = GetDupFileItem(targetFile);
 			if (targetDupFileItem.Size != sourceDupItem.Size)
 				return false;
 
-			QuickHashFile(targetDupFileItem, quickHashSize, ref totalFileBytes, ref totalReadBytes);
+			QuickHashFile(targetDupFileItem, quickHashSize);
 			if (targetDupFileItem.QuickHash != sourceDupItem.QuickHash)
 				return false;
 
@@ -133,7 +120,7 @@ namespace Xnlab.SharpDups.Logic
 			var position = 0L;
 			for (var i = 0; i < length; i++)
 			{
-				ProgressiveHashSection(position, targetDupFileItem, bufferSize, ref totalReadBytes);
+				ProgressiveHashSection(position, targetDupFileItem, bufferSize);
 				if (sourceDupItem.HashSections.Count < i + 1 || targetDupFileItem.HashSections[i] != sourceDupItem.HashSections[i])
 					return false;
 				position += bufferSize;
@@ -141,9 +128,8 @@ namespace Xnlab.SharpDups.Logic
 			return true;
 		}
 
-		private static void QuickHashFile(DupItem file, int quickHashSize, ref long totalFileBytes, ref long totalReadBytes)
+		private static void QuickHashFile(DupItem file, int quickHashSize)
 		{
-			Interlocked.Add(ref totalFileBytes, file.Size);
 			var hashSize = (int)Math.Min(file.Size, quickHashSize);
 			using (var stream = File.Open(file.FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
@@ -164,11 +150,10 @@ namespace Xnlab.SharpDups.Logic
 				file.QuickHash = HashTool.HashBytesText(file.Tags);
 				if (file.Size <= hashSize)
 					file.Status = CompareStatus.Matched;
-				Interlocked.Add(ref totalReadBytes, hashSize);
 			}
 		}
 
-		private static void ProgressiveHash(IGrouping<string, DupItem> quickHashGroup, int bufferSize, ref long totalReadBytes)
+		private static void ProgressiveHash(IGrouping<string, DupItem> quickHashGroup, int bufferSize)
 		{
 			var groups = quickHashGroup.ToArray();
 			var first = groups.First();
@@ -185,7 +170,7 @@ namespace Xnlab.SharpDups.Logic
 					{
 						try
 						{
-							ProgressiveHashSection(position, groupFile, bufferSize, ref totalReadBytes);
+							ProgressiveHashSection(position, groupFile, bufferSize);
 						}
 						catch (Exception)
 						{
@@ -215,12 +200,11 @@ namespace Xnlab.SharpDups.Logic
 			}
 		}
 
-		private static void ProgressiveHashSection(long position, DupItem dupItem, int bufferSize, ref long totalReadBytes)
+		private static void ProgressiveHashSection(long position, DupItem dupItem, int bufferSize)
 		{
 			if (dupItem.HashSections == null)
 				dupItem.HashSections = new List<string>();
-			dupItem.HashSections.Add(HashTool.HashFile(dupItem.FileName, position, bufferSize, bufferSize, out var readSize));
-			Interlocked.Add(ref totalReadBytes, readSize);
+			dupItem.HashSections.Add(HashTool.HashFile(dupItem.FileName, position, bufferSize, bufferSize));
 		}
 
 		private IEnumerable<IEnumerable<IGrouping<long, DupItem>>> MapFileSizeGroups(IEnumerable<IGrouping<long, DupItem>> source) => Slice(source);
