@@ -135,7 +135,6 @@ namespace Xnlab.SharpDups.Runner
 			Log($"Total compared files: {result.TotalComparedFiles}", true);
 			Log($"Total file bytes: {result.TotalBytesInComparedFiles}", true);
 			Log($"Total read bytes: {result.TotalReadBytes}", true);
-			Log(string.Empty);
 		}
 
 		private static void Log(string text, bool logToFile = false)
