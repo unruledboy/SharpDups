@@ -36,8 +36,16 @@ namespace Xnlab.SharpDups.Logic
 			//groups with same file size
 			var sameSizeGroups = files.Select(f =>
 			{
-				return GetDupFileItem(f);
-			}).GroupBy(f => f.Size).Where(g => g.Count() > 1);
+				try
+				{
+					return GetDupFileItem(f);
+				}
+				catch (Exception)
+				{
+					result.FailedToProcessFiles.Add(f);
+					return null;
+				}
+			}).Where(f => f != null).GroupBy(f => f.Size).Where(g => g.Count() > 1);
 
 			var mappedSameSizeGroupList = new ConcurrentBag<IGrouping<string, DupItem>>();
 
